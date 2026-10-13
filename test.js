@@ -101,9 +101,9 @@ t("max spacing (6 days x 1) still beats the 7-day pause window", () => {
 });
 
 t("survives a DST transition without going backwards", () => {
-  // Cairo moves its clock; the only invariant that matters is forward progress.
-  const tz = "Africa/Cairo";
-  let now = Date.UTC(2026, 3, 23, 12, 0, 0); // late April, around Egypt DST start
+  // Berlin moves its clock; the only invariant that matters is forward progress.
+  const tz = "Europe/Berlin";
+  let now = Date.UTC(2026, 2, 28, 12, 0, 0); // the day before EU DST starts (29 March 2026)
   const anchor = localDayNum(now, tz);
   for (let i = 0; i < 20; i++) {
     const r = nextRun(now, { intervalDays: 1, times: 4, anchorDay: anchor }, tz);

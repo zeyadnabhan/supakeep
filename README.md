@@ -10,7 +10,15 @@ free-tier projects are not paused for inactivity.
 - Scheduling: every 1–6 days, 1–6 times spread evenly across that period starting at midnight
   (for example: every 2 days × 4 times = once every 12 hours).
 
-## Deploy on a server (Linux + Docker)
+## Installation
+
+SupaKeep is one small Node.js process that needs a writable folder for its SQLite file. Pick
+whichever setup matches your machine; they all use the same `.env` (see
+[Configuration](#configuration-env)).
+
+### Option 1: Docker with automatic HTTPS (a server with a domain)
+
+Use this on a fresh Linux server where ports 80 and 443 are free.
 
 1. Point your domain (A record) at the server's IP and open ports 80 and 443.
 2. Clone the repository on the server, then:
@@ -23,14 +31,49 @@ docker compose up -d --build
 
 3. Open `https://your-domain` and log in with the password.
 
-Caddy obtains the HTTPS certificate on its own.
+The bundled Caddy obtains and renews the HTTPS certificate on its own.
 
-### Already running a reverse proxy?
+### Option 2: Docker behind your own reverse proxy
 
-If ports 80/443 are taken by your own Nginx, Caddy or Traefik, remove the `caddy` service from
-`docker-compose.yml`, publish the app on `127.0.0.1:3000` (add `ports: ["127.0.0.1:3000:3000"]`
-to the `app` service), and proxy your domain to it. Serve it over HTTPS: the session cookie is
-`Secure` by default.
+Use this when ports 80/443 already belong to your own Nginx, Caddy, Traefik, a tunnel, etc.
+
+Remove the `caddy` service (and the `caddy_data` / `caddy_config` volumes) from
+`docker-compose.yml`, and publish the app on localhost by adding this to the `app` service:
+
+```yaml
+    ports:
+      - "127.0.0.1:3000:3000"
+```
+
+Then proxy your domain to `127.0.0.1:3000` and serve it over HTTPS. If your proxy runs in Docker
+too, skip `ports` and attach `app` to the proxy's network instead, targeting `app:3000`.
+
+### Option 3: Without Docker (Node.js 22.13+)
+
+Works on Linux, macOS and Windows.
+
+```bash
+npm ci --omit=dev
+cp .env.example .env   # set ADMIN_PASSWORD
+npm start              # listens on port 3000
+```
+
+The database is created at `data/supakeep.db`; set `DB_PATH` to move it and `PORT` to change the
+port. Keep the process running with whatever you already use (systemd, pm2, a Windows service)
+and put it behind an HTTPS reverse proxy for anything reachable from the internet.
+
+### Option 4: No domain (home network, localhost, a quick try)
+
+Run Option 2 or 3 without a proxy and open `http://<host>:3000` directly. Browsers drop `Secure`
+cookies over plain HTTP, so login only works if you set `COOKIE_SECURE=false` in `.env`. Leave
+`DOMAIN` as it is; it is only used for links in Telegram notifications. Do not expose this setup
+to the internet.
+
+### Other platforms
+
+Any host that can run a container (or Node.js 22.13+) with a **persistent** disk works: mount the
+disk at `/app/data` in the container, set `ADMIN_PASSWORD`, and route HTTPS to port 3000. A
+platform that wipes the filesystem on every deploy will lose your projects.
 
 ### Updating
 
@@ -108,8 +151,11 @@ filter shows. Logs are removed automatically after 90 days.
 | `ADMIN_PASSWORD` | — | Login password (at least 8 characters) |
 | `TZ_NAME` | `UTC` | IANA timezone used for run times |
 | `CHECK_MINUTES` | `5` | How often the scheduler checks for due projects |
+| `COOKIE_SECURE` | `true` | Set to `false` only when serving over plain HTTP |
+| `PORT` | `3000` | Port the app listens on |
+| `DB_PATH` | `data/supakeep.db` | Location of the SQLite file |
 
-## Run locally (Node 22.13+)
+## Development
 
 ```bash
 npm install
