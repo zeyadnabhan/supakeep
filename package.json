@@ -1,0 +1,16 @@
+{
+  "name": "supakeep",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning server.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}

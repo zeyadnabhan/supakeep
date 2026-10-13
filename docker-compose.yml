@@ -1,0 +1,31 @@
+# SupaKeep + Caddy (automatic HTTPS for $DOMAIN).
+# Deploy / update:  docker compose up -d --build
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    mem_limit: 256m
+    volumes:
+      - supakeep_data:/app/data
+    # No published port: only reachable through Caddy.
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  supakeep_data:
+  caddy_data:
+  caddy_config:
